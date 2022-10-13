@@ -1,0 +1,57 @@
+Name:	Boqiang Cui
+UWNetID:	boqiang
+
+Name: Omkar Agashe
+UWNetID: omagashe
+
+Name: Andy Phan
+UWNetID: aphan1
+
+Instructions to reproduce the results:
+  sudo ./run.sh
+  sudo ./run_bbr.sh
+
+Answers to the questions:
+Part 2
+  1. q = 20:
+    	AVG = 2.869s
+      STDEV = 0.631s
+     q = 100:
+      AVG = 10.560s
+      STDEV = 3.709s   
+  2. Essentially, TCP congestion control depends on hosts dropping packets in a timely manner. When you have more packets comming in then can be sent, they start to queue. With a larger
+  buffer, more and more incoming packets will be queued instead of being dropped. This creates high latency. If a large buffer allows a queue size of 100, for example,
+  the 99th packet will remain in the buffer a long time before being transmitted. The end users just see slow responses instead of dropped packets. If end users had seen dropped packets,
+  they would have decreased their sending rates and this would have decreased latency since buffer queues would decrease.
+  3. The (maximum) transmit queue length on the network interface is 1000 with MTU:1500 for each packet. 
+  If this packet is the 1000th packet in the queue.
+  1000 packets * (1500 * 8) bits / 10^8 bit/s = 0.12s
+  4. The RTT for q=20 ranges from about 150ms to 300ms, while the RTT for q=100 ranges from about 800ms to 1400ms. 
+  q=100 is 5 times that of q=20, and the range of of q=100 is also about 5 times that of q=20. 
+  This means that the relation of the RTT for each queue size is about linear in regards to queue size.
+  5. The easiest way to solve the bufferbloat problem is to shrink the buffer size. 
+  Since the queue size is the main issue with bufferbloat, we can just decrease it so that packets drop and TCP's congestion mechanism kicks in.
+  Another option is for hosts to use bottleneck bandwidth and RTTs to infer congestion (which we can detect even if the buffers are bloating), and then slow down the sending rate. Once 
+  the sending rates decrease, the buffers should stop bloating.
+Part 3
+  1. q = 20:
+  		AVG = 2.429s
+      STDEV = 1.045s
+     q = 100:
+     	AVG = 1.891s
+      STDEV = 0.219s
+  2. The latency for q=100 is faster than the latency for q=20 by about .5s.
+  This is surprising because for part 2, q=20 was significantly faster than q=100, by about 8s.
+  3. q=20: The number of packets in queue for BBR fluctuates from 0 to 20, dipping from 20 to 10 to 0-2, and then rising back to 10 to 20,
+      while the number of packets in queue for Reno fluctuates from 5 to 20, averaging about 15 packets in queue.
+		 q=100:The number of packets in queue for BBR never reaches 60 or above. It fluctuates from 0 to 35, with an outlier jumping to about 55 packets in queue.
+     For Reno, the number of packets rises to 100, stays at about 80, then drops significantly by half, then rises back to 100, drops by half, and continues.
+     The biggest difference of BBR vs. Reno is that BBR almost empties out the queue multiple times, while Reno almost never empties out.
+     With a larger queue size, BBR also never reaches max queue size, while Reno reaches max queue size multiple times.
+  	BRR can adjust its sending rate despite large buffers because it makes use of RTT and network delivery rate to ascertain when congestion is happening, instead of just making a descicion off of packet loss. Hence, the queues 
+    are less full with BBR.
+  4. TCP BBR can greatly reduce buffer bloating and mostly solve it if all hosts are using it. But the use of the protocol on a certain host does not prevent that host from suffering from buffer bloating. Other hosts
+  can not be using BBR, and this can still create latency problems in the network. Furthermore, new router protocols and innovations could potentially inhibit the efectiveness of BBR. 
+  Interestingly, we noticed that when the size of q is small, BBR has a larger STDEV than Reno. Thus, we think BBR may not be as stable (compared to other solutions)
+  for reducing bufferbloat for certain topologies when q is small. Considering that users may use different 
+  routers with different q sizes, we should think carefully about the benefits/drawbacks of BBR vs other potential solutions for reducing buffer bloating.
